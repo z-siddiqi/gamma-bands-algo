@@ -48,6 +48,9 @@ extern double  Pos_SD3 = 0.00;
 extern double  Neg_SD1 = 0.00;
 extern double  Neg_SD2 = 0.00;
 extern double  Neg_SD3 = 0.00;
+extern int     daysBack = 1;
+extern int     startHour = 22;
+extern int     startMinute = 00;
 
 //---- visualisation parameters
 bool           Show_VWAP = true;
@@ -79,6 +82,31 @@ int      Bars_Back = 0;
 //+------------------------------------------------------------------+
 int FindStartIndex()
   {
+   int dayofweektoday = TimeDayOfWeek(Time[0]);
+   int days = 0;
+
+   for(int i = 1; i <= Bars; i++)
+     {
+
+      if((TimeDayOfWeek(Time[i]) != dayofweektoday) || (daysBack == 0))
+        {
+         days++;
+         dayofweektoday = TimeDayOfWeek(Time[i]);
+
+         if((daysBack == days) || (daysBack == 0))
+           {
+            while((TimeHour(Time[i]) > startHour) || (TimeMinute(Time[i]) > startMinute))
+              {
+               i++;
+              }
+            ObjectSet("Starting_Time", OBJPROP_TIME1, Time[i]);
+            ObjectSet("Starting_Time", OBJPROP_COLOR, Black);
+            ObjectCreate("Starting_Time", OBJ_VLINE, 0, Time[i], 0);
+            return (i);
+           }
+        }
+     }
+
    return(0);
   }
 
@@ -125,6 +153,18 @@ int init()
 //+------------------------------------------------------------------+
 void DeleteObjectsByPrefix(string Prefix)
   {
+   int L = StringLen(Prefix);
+   int i = 0;
+   while(i < ObjectsTotal())
+     {
+      string ObjName = ObjectName(i);
+      if(StringSubstr(ObjName, 0, L) != Prefix)
+        {
+         i++;
+         continue;
+        }
+      ObjectDelete(ObjName);
+     }
   }
 
 //+------------------------------------------------------------------+
