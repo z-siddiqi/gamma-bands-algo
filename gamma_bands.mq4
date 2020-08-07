@@ -4,5 +4,5 @@
 //|                                                                           |
 //|      Gamma bands explained: www.macrohedged.com/store/p4/gammamodule.html |
 //+---------------------------------------------------------------------------+
-#property version   "1.00"
+#property version "1.00"
 #property strict
