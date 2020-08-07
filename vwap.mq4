@@ -41,7 +41,6 @@
 #property indicator_width8 1
 #property indicator_style8 2
 
-
 //---- input parameters
 extern double  Pos_SD1 = 0.00;
 extern double  Pos_SD2 = 0.00;
@@ -84,6 +83,20 @@ int FindStartIndex()
   }
 
 //+------------------------------------------------------------------+
+//| Help Set Indicator Styling                                       |
+//+------------------------------------------------------------------+
+void StyleHelper(bool show, int index, string label, double& buffer[])
+  {
+   if(show == true)
+      SetIndexStyle(index, DRAW_LINE);
+   else
+      SetIndexStyle(index, DRAW_NONE);
+   
+   SetIndexLabel(index, label);
+   SetIndexBuffer(index, buffer);
+  }
+
+//+------------------------------------------------------------------+
 //| Indicator Init Function                                          |
 //+------------------------------------------------------------------+
 int init()
@@ -91,70 +104,15 @@ int init()
    OBJECT_PREFIX = OBJECT_PREFIX + DoubleToStr(Time[FindStartIndex()], 0) + "_";
 
    IndicatorBuffers(8);
-
-   if(Show_PVP == true)
-      SetIndexStyle(0, DRAW_LINE);
-   else
-      SetIndexStyle(0, DRAW_NONE);
    
-   SetIndexLabel(0, "PVP");
-   SetIndexBuffer(0, PVP);
-
-   if(Show_VWAP == true)
-      SetIndexStyle(1, DRAW_LINE);
-   else
-      SetIndexStyle(1, DRAW_NONE);
-   
-   SetIndexLabel(1, "VWAP");
-   SetIndexBuffer(1, VWAP);
-
-   if(Show_SD1 == true)
-      SetIndexStyle(2, DRAW_LINE);
-   else
-      SetIndexStyle(2, DRAW_NONE);
-   
-   SetIndexLabel(2, "SD1Pos");
-   SetIndexBuffer(2, SD1Pos);
-
-   if(Show_SD1 == true)
-      SetIndexStyle(3, DRAW_LINE);
-   else
-      SetIndexStyle(3, DRAW_NONE);
-   
-   SetIndexLabel(3, "SD1Neg");
-   SetIndexBuffer(3, SD1Neg);
-
-   if(Show_SD2 == true)
-      SetIndexStyle(4, DRAW_LINE);
-   else
-      SetIndexStyle(4, DRAW_NONE);
-   
-   SetIndexLabel(4, "SD2Pos");
-   SetIndexBuffer(4, SD2Pos);
-
-   if(Show_SD2 == true)
-      SetIndexStyle(5, DRAW_LINE);
-   else
-      SetIndexStyle(5, DRAW_NONE);
-   
-   SetIndexLabel(5, "SD2Neg");
-   SetIndexBuffer(5, SD2Neg);
-
-   if(Show_SD3 == true)
-      SetIndexStyle(6, DRAW_LINE);
-   else
-      SetIndexStyle(6, DRAW_NONE);
-   
-   SetIndexLabel(6, "SD3Pos");
-   SetIndexBuffer(6, SD3Pos);
-
-   if(Show_SD3 == true)
-      SetIndexStyle(7, DRAW_LINE);
-   else
-      SetIndexStyle(7, DRAW_NONE);
-   
-   SetIndexLabel(7, "SD3Neg");
-   SetIndexBuffer(7, SD3Neg);
+   StyleHelper(Show_PVP, 0, "PVP", PVP);
+   StyleHelper(Show_VWAP, 1, "VWAP", VWAP);
+   StyleHelper(Show_SD1, 2, "SD1Pos", SD1Pos);
+   StyleHelper(Show_SD1, 3, "SD1Neg", SD1Neg);
+   StyleHelper(Show_SD2, 4, "SD2Pos", SD2Pos);
+   StyleHelper(Show_SD2, 5, "SD2Neg", SD2Neg);
+   StyleHelper(Show_SD3, 6, "SD3Pos", SD3Pos);
+   StyleHelper(Show_SD3, 7, "SD3Neg", SD3Neg);
 
    string short_name = "VWAP";
    IndicatorShortName(short_name);
@@ -215,7 +173,7 @@ int start()
               {
                n = MathRound((Price_i - min) / Point);
 
-               if(t1 <= Price_i && Price_i <  t2)
+               if(t1 <= Price_i && Price_i < t2)
                  {
                   Hist[n] += MathRound(Volume[i] * 2 * (t2 - t1) / totalRange);
                  }
