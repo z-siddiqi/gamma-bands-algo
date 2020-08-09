@@ -247,12 +247,12 @@ int start()
          else
             VWAP[i] = TotalPV / TotalVolume;
 
-         SD1Pos[i] = VWAP[i] + (Pos_SD3 * Point * 10);
-         SD1Neg[i] = VWAP[i] - (Neg_SD3 * Point * 10);
+         SD1Pos[i] = VWAP[i] + (Pos_SD1 * Point * 10);
+         SD1Neg[i] = VWAP[i] - (Neg_SD1 * Point * 10);
          SD2Pos[i] = VWAP[i] + (Pos_SD2 * Point * 10);
          SD2Neg[i] = VWAP[i] - (Neg_SD2 * Point * 10);
-         SD3Pos[i] = VWAP[i] + (Pos_SD1 * Point * 10);
-         SD3Neg[i] = VWAP[i] - (Neg_SD1 * Point * 10);
+         SD3Pos[i] = VWAP[i] + (Pos_SD3 * Point * 10);
+         SD3Neg[i] = VWAP[i] - (Neg_SD3 * Point * 10);
         }
 
       DeleteObjectsByPrefix(OBJECT_PREFIX);
