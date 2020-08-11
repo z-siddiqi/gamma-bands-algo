@@ -188,9 +188,9 @@ void CheckForOpen()
   }
 
 //+------------------------------------------------------------------+
-//| Modify SL to VWAP                                                |
+//| Modify TP to VWAP                                                |
 //+------------------------------------------------------------------+
-void ModifyStopLoss()
+void ModifyTakeProfit()
   {
    double VWAP =  NormalizeDouble(iCustom(Symbol(), 5, "VWAP", Pos_SD1, Pos_SD2, Pos_SD3, Neg_SD1, Neg_SD2, Neg_SD3, 1, 1), 5);
    if(OrdersTotal() != 0)
@@ -265,5 +265,5 @@ void OnTick()
   {
    CheckForOpen();
    CheckForClose();
-   ModifyStopLoss();
+   ModifyTakeProfit();
   }

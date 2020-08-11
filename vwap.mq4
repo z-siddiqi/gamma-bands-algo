@@ -9,37 +9,34 @@
 
 #property indicator_chart_window
 
-#property indicator_buffers 8
+#property indicator_buffers 7
 
-#property indicator_color1 Black       // PVP
+#property indicator_color1 Black       // VWAP
 #property indicator_width1 1
 
-#property indicator_color2 Black       // VWAP
+#property indicator_color2 Black       // SD1Pos
 #property indicator_width2 1
+#property indicator_style2 2
 
-#property indicator_color3 Black       // SD1Pos
+#property indicator_color3 Black       // SD1Neg
 #property indicator_width3 1
 #property indicator_style3 2
 
-#property indicator_color4 Black       // SD1Neg
+#property indicator_color4 Black       // SD2Pos
 #property indicator_width4 1
 #property indicator_style4 2
 
-#property indicator_color5 Black       // SD2Pos
+#property indicator_color5 Black       // SD2Neg
 #property indicator_width5 1
 #property indicator_style5 2
 
-#property indicator_color6 Black       // SD2Neg
+#property indicator_color6 Black       // SD3Pos
 #property indicator_width6 1
 #property indicator_style6 2
 
-#property indicator_color7 Black       // SD3Pos
+#property indicator_color7 Black       // SD3Neg
 #property indicator_width7 1
 #property indicator_style7 2
-
-#property indicator_color8 Black       // SD3Neg
-#property indicator_width8 1
-#property indicator_style8 2
 
 //---- input parameters
 extern double  Pos_SD1 = 0.00;
@@ -48,21 +45,17 @@ extern double  Pos_SD3 = 0.00;
 extern double  Neg_SD1 = 0.00;
 extern double  Neg_SD2 = 0.00;
 extern double  Neg_SD3 = 0.00;
-extern int     daysBack = 1;
-extern int     startHour = 22;
-extern int     startMinute = 00;
+extern int     days_back = 1;
+extern int     start_hour = 22;
+extern int     start_minute = 00;
 
 //---- visualisation parameters
 bool           Show_VWAP = true;
 bool           Show_SD1 = true;
 bool           Show_SD2 = true;
 bool           Show_SD3 = true;
-bool           Show_PVP = false;
-bool           Show_Histogram = false;
-int            HistogramAmplitude = 50;
 
 //---- buffers
-double PVP[];
 double VWAP[];
 double SD1Pos[];
 double SD1Neg[];
@@ -72,30 +65,30 @@ double SD3Pos[];
 double SD3Neg[];
 double Hist[];
 
-double   OpenTime = 0;
+double   open_time = 0;
 string   OBJECT_PREFIX = "VolumeHistogram_";
 int      items;
-int      Bars_Back = 0;
+int      bars_back = 0;
 
 //+------------------------------------------------------------------+
 //| Find the Bar Number for the Given Date                           |
 //+------------------------------------------------------------------+
 int FindStartIndex()
   {
-   int dayofweektoday = TimeDayOfWeek(Time[0]);
+   int day_of_week_today = TimeDayOfWeek(Time[0]);
    int days = 0;
 
    for(int i = 1; i <= Bars; i++)
      {
 
-      if((TimeDayOfWeek(Time[i]) != dayofweektoday) || (daysBack == 0))
+      if((TimeDayOfWeek(Time[i]) != day_of_week_today) || (days_back == 0))
         {
          days++;
-         dayofweektoday = TimeDayOfWeek(Time[i]);
+         day_of_week_today = TimeDayOfWeek(Time[i]);
 
-         if((daysBack == days) || (daysBack == 0))
+         if((days_back == days) || (days_back == 0))
            {
-            while((TimeHour(Time[i]) > startHour) || (TimeMinute(Time[i]) > startMinute))
+            while((TimeHour(Time[i]) > start_hour) || (TimeMinute(Time[i]) > start_minute))
               {
                i++;
               }
@@ -131,16 +124,15 @@ int init()
   {
    OBJECT_PREFIX = OBJECT_PREFIX + DoubleToStr(Time[FindStartIndex()], 0) + "_";
 
-   IndicatorBuffers(8);
+   IndicatorBuffers(7);
    
-   StyleHelper(Show_PVP, 0, "PVP", PVP);
-   StyleHelper(Show_VWAP, 1, "VWAP", VWAP);
-   StyleHelper(Show_SD1, 2, "SD1Pos", SD1Pos);
-   StyleHelper(Show_SD1, 3, "SD1Neg", SD1Neg);
-   StyleHelper(Show_SD2, 4, "SD2Pos", SD2Pos);
-   StyleHelper(Show_SD2, 5, "SD2Neg", SD2Neg);
-   StyleHelper(Show_SD3, 6, "SD3Pos", SD3Pos);
-   StyleHelper(Show_SD3, 7, "SD3Neg", SD3Neg);
+   StyleHelper(Show_VWAP, 0, "VWAP", VWAP);
+   StyleHelper(Show_SD1, 1, "SD1Pos", SD1Pos);
+   StyleHelper(Show_SD1, 2, "SD1Neg", SD1Neg);
+   StyleHelper(Show_SD2, 3, "SD2Pos", SD2Pos);
+   StyleHelper(Show_SD2, 4, "SD2Neg", SD2Neg);
+   StyleHelper(Show_SD3, 5, "SD3Pos", SD3Pos);
+   StyleHelper(Show_SD3, 6, "SD3Neg", SD3Neg);
 
    string short_name = "VWAP";
    IndicatorShortName(short_name);
@@ -157,13 +149,13 @@ void DeleteObjectsByPrefix(string Prefix)
    int i = 0;
    while(i < ObjectsTotal())
      {
-      string ObjName = ObjectName(i);
-      if(StringSubstr(ObjName, 0, L) != Prefix)
+      string object_name = ObjectName(i);
+      if(StringSubstr(object_name, 0, L) != Prefix)
         {
          i++;
          continue;
         }
-      ObjectDelete(ObjName);
+      ObjectDelete(object_name);
      }
   }
 
@@ -172,32 +164,32 @@ void DeleteObjectsByPrefix(string Prefix)
 //+------------------------------------------------------------------+
 int start()
   {
-   double TotalVolume = 0;
-   double TotalPV = 0;
+   double total_volume = 0;
+   double total_pv = 0;
    int n;
 
-   if(OpenTime != Time[0])
+   if(open_time != Time[0])
      {
-      Bars_Back = FindStartIndex();
-      if(Bars_Back != 0)
+      bars_back = FindStartIndex();
+      if(bars_back != 0)
         {
-         ObjectSet("Starting_Time", OBJPROP_TIME1, Time[Bars_Back]);
+         ObjectSet("Starting_Time", OBJPROP_TIME1, Time[bars_back]);
          ObjectSet("Starting_Time", OBJPROP_COLOR, Black);
-         ObjectCreate("Starting_Time", OBJ_VLINE, 0, Time[Bars_Back], 0);
+         ObjectCreate("Starting_Time", OBJ_VLINE, 0, Time[bars_back], 0);
         }
 
-      OpenTime = Time[0];
+      open_time = Time[0];
 
-      double max = High[iHighest(NULL, 0, MODE_HIGH, Bars_Back, 0)];
-      double min =  Low[iLowest(NULL, 0, MODE_LOW,  Bars_Back, 0)];
+      double max = High[iHighest(NULL, 0, MODE_HIGH, bars_back, 0)];
+      double min =  Low[iLowest(NULL, 0, MODE_LOW,  bars_back, 0)];
       items = MathRound((max - min) / Point);
 
       ArrayResize(Hist, items);
       ArrayInitialize(Hist, 0);
 
-      TotalVolume = 0;
-      TotalPV = 0;
-      for(int i = Bars_Back; i >= 1; i--)
+      total_volume = 0;
+      total_pv = 0;
+      for(int i = bars_back; i >= 1; i--)
         {
          double t1 = Low[i], t2 = Open[i], t3 = Close[i], t4 = High[i];
          if(t2 > t3)
@@ -205,25 +197,25 @@ int start()
             t3 = Open[i];
             t2 = Close[i];
            }
-         double totalRange = 2 * (t4 - t1) - t3 + t2;
+         double total_range = 2 * (t4 - t1) - t3 + t2;
 
-         if(totalRange != 0.0)
+         if(total_range != 0.0)
            {
-            for(double Price_i = t1; Price_i <= t4; Price_i += Point)
+            for(double price_i = t1; price_i <= t4; price_i += Point)
               {
-               n = MathRound((Price_i - min) / Point);
+               n = MathRound((price_i - min) / Point);
 
-               if(t1 <= Price_i && Price_i < t2)
+               if(t1 <= price_i && price_i < t2)
                  {
-                  Hist[n] += MathRound(Volume[i] * 2 * (t2 - t1) / totalRange);
+                  Hist[n] += MathRound(Volume[i] * 2 * (t2 - t1) / total_range);
                  }
-               if(t2 <= Price_i && Price_i <= t3)
+               if(t2 <= price_i && price_i <= t3)
                  {
-                  Hist[n] += MathRound(Volume[i] * (t3 - t2) / totalRange);
+                  Hist[n] += MathRound(Volume[i] * (t3 - t2) / total_range);
                  }
-               if(t3 < Price_i && Price_i <= t4)
+               if(t3 < price_i && price_i <= t4)
                  {
-                  Hist[n] += MathRound(Volume[i] * 2 * (t4 - t3) / totalRange);
+                  Hist[n] += MathRound(Volume[i] * 2 * (t4 - t3) / total_range);
                  }
               }
            }
@@ -234,18 +226,13 @@ int start()
            }
 
          // Use H + L + C / 3 as average price
-         TotalPV += Volume[i] * ((Low[i] + High[i] + Close[i]) / 3);
-         TotalVolume += Volume[i];
+         total_pv += Volume[i] * ((Low[i] + High[i] + Close[i]) / 3);
+         total_volume += Volume[i];
 
-         if(i == Bars_Back)
-            PVP[i] = Close[i];
-         else
-            PVP[i] = min + ArrayMaximum(Hist) * Point;
-
-         if(i == Bars_Back)
+         if(i == bars_back)
             VWAP[i] = Close[i];
          else
-            VWAP[i] = TotalPV / TotalVolume;
+            VWAP[i] = total_pv / total_volume;
 
          SD1Pos[i] = VWAP[i] + (Pos_SD1 * Point * 10);
          SD1Neg[i] = VWAP[i] - (Neg_SD1 * Point * 10);
@@ -256,34 +243,6 @@ int start()
         }
 
       DeleteObjectsByPrefix(OBJECT_PREFIX);
-
-      if(Show_Histogram)
-        {
-         int MaxVolume = Hist[ArrayMaximum(Hist)];
-         int multiplier;
-         for(int i = 0; i <= items; i++)
-           {
-            if(Bars_Back < HistogramAmplitude)
-               multiplier = Bars_Back;
-            else
-               multiplier = HistogramAmplitude;
-
-            if(MaxVolume != 0)
-               Hist[i] = MathRound(multiplier * Hist[i] / MaxVolume);
-
-            if(Hist[i] > 0)
-              {
-               int time_i = Bars_Back - Hist[i];
-               if(time_i >= 0)
-                 {
-                  ObjectCreate(OBJECT_PREFIX + i, OBJ_RECTANGLE, 0, Time[Bars_Back], min + i * Point, Time[time_i], min + (i + 1) * Point);
-                  ObjectSet(OBJECT_PREFIX + i, OBJPROP_STYLE, DRAW_HISTOGRAM);
-                  ObjectSet(OBJECT_PREFIX + i, OBJPROP_COLOR, Teal);
-                  ObjectSet(OBJECT_PREFIX + i, OBJPROP_BACK, true);
-                 }
-              }
-           }
-        }
      }
 
    return(0);
