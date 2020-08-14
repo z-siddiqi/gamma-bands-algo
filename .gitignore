@@ -1,2 +1,8 @@
 # ignore compiled code
 *.ex4
+
+# ignore csv files
+*.csv
+
+# ignore vsc folder 
+.vscode/* 
