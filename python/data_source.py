@@ -3,12 +3,15 @@ import datetime
 import pandas as pd
 import time
 
+from events import MarketEvent
+
 class DataSource():
     
     """Reads CSV file and feeds out data to imitate a live data stream."""
     
-    def __init__(self, csv_dir, symbol):
+    def __init__(self, event_queue, csv_dir, symbol):
         
+        self.event_queue = event_queue
         self.csv_dir = csv_dir
         self.symbol = symbol
         self.symbol_data = pd.DataFrame()  # df containing csv
@@ -26,7 +29,7 @@ class DataSource():
         self.symbol_data = pd.read_csv(path, parse_dates=[0], dayfirst=True, index_col=0)
         self.data_stream = self.symbol_data.itertuples()
                 
-    def get_latest_data(self, symbol, n=1):
+    def get_latest_data(self, n=1):
 
         """Returns the last n rows from latest_data."""
         
@@ -38,19 +41,13 @@ class DataSource():
         
         try:
             data = next(self.data_stream)
-            date_time = data[0].to_pydatetime().strftime('%m-%d-%Y %H:%M:%S')
-            formatted_data = {'Time': date_time, 'Open': data[1], 'High': data[2], 'Low' : data[3], 'Close' : data[4], 'vwap' : data[7], 'ub' : data[8], 'lb' : data[9]}   
+            datestamp = data[0].to_pydatetime().strftime('%d-%m-%Y %H:%M:%S')
+            formatted_data = {
+                'Time': datestamp, 'Open': data[1], 'High': data[2], 'Low' : data[3], 
+                'Close' : data[4], 'vwap' : data[7], 'ub' : data[8], 'lb' : data[9]
+            }   
             self.latest_data.append(formatted_data)
         except:
             self.continue_backtest = False  # no data left
 
-# testing the data stream
-CSV_dir = os.path.dirname(os.path.realpath(__file__))
-symbol = 'EURUSD'
-data = DataSource(CSV_dir, symbol)
-
-while True:
-    data.update_data()
-    latest = data.get_latest_data(symbol, 1)
-    print(latest)
-    time.sleep(5)
+        self.event_queue.put(MarketEvent())

@@ -6,3 +6,7 @@
 
 # ignore vsc folder 
 .vscode/* 
+
+# ignore byte-compiled files
+__pycache__/
+*.py[cod]
