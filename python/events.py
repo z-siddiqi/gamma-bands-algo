@@ -1,6 +1,6 @@
 class Event():
 
-    """Abstract base class providing an interface for all inherited events."""
+    """Abstract base class that provides an interface for all inherited events."""
 
     pass
 
@@ -25,9 +25,10 @@ class OrderEvent(Event):
 
     """Event for sending an order from the portfolio to execution."""
     
-    def __init__(self, symbol, order_type, quantity, direction):
+    def __init__(self, symbol, datestamp, order_type, quantity, direction):
         
         self.symbol = symbol
+        self.datestamp = datestamp
         self.order_type = order_type
         self.quantity = quantity
         self.direction = direction
@@ -36,10 +37,10 @@ class FillEvent(Event):
 
     """Event for an order getting filled by the execution."""
     
-    def __init__(self, symbol, order_type, datestamp, quantity, direction):
+    def __init__(self, symbol, datestamp, order_type, quantity, direction):
         
         self.symbol = symbol
-        self.order_type = order_type
         self.datestamp = datestamp
+        self.order_type = order_type
         self.quantity = quantity
         self.direction = direction

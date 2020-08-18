@@ -1,11 +1,23 @@
 import os
-import datetime
 import pandas as pd
-import time
+
+from abc import ABCMeta, abstractmethod
 
 from events import MarketEvent
 
-class DataSource():
+class DataAbstractClass(metaclass = ABCMeta):
+
+    """Abstract base class that provides an interface for all inherited data objects."""
+    
+    @abstractmethod
+    def get_latest_data(self, n=1):
+        pass
+    
+    @abstractmethod
+    def update_data(self):
+        pass
+
+class SimulatedDataSource(DataAbstractClass):
     
     """Reads CSV file and feeds out data to imitate a live data stream."""
     
@@ -43,8 +55,14 @@ class DataSource():
             data = next(self.data_stream)
             datestamp = data[0].to_pydatetime().strftime('%d-%m-%Y %H:%M:%S')
             formatted_data = {
-                'Time': datestamp, 'Open': data[1], 'High': data[2], 'Low' : data[3], 
-                'Close' : data[4], 'vwap' : data[7], 'ub' : data[8], 'lb' : data[9]
+                'Time': datestamp,
+                'Open': data[1],
+                'High': data[2],
+                'Low' : data[3], 
+                'Close' : data[4],
+                'vwap' : data[7],
+                'ub' : data[8],
+                'lb' : data[9]
             }   
             self.latest_data.append(formatted_data)
         except:
