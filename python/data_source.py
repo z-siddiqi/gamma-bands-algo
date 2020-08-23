@@ -65,7 +65,6 @@ class SimulatedDataSource(DataAbstractClass):
                 'lb' : data[9]
             }   
             self.latest_data.append(formatted_data)
+            self.event_queue.put(MarketEvent())
         except:
             self.continue_backtest = False  # no data left
-
-        self.event_queue.put(MarketEvent())

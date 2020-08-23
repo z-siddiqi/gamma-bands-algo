@@ -9,20 +9,21 @@ def vwap_bands(vwap, offset):
     return vwap + offset
 
 csv_dir = os.path.dirname(os.path.realpath(__file__))
-path = os.path.join(csv_dir, 'EURUSD_Candlestick_1_M_BID_03.08.2020-07.08.2020.csv')
+path = os.path.join(csv_dir, 'EURUSD_Candlestick_1_M_BID_10.08.2020-14.08.2020.csv')
 
 df = pd.read_csv(path, parse_dates=[0], dayfirst=True)
 df['Local time'] = df['Local time'].dt.tz_localize(None)  # remove timezone
 df = df.set_index('Local time')
 
-start_date = dt.datetime.strptime('2020-08-06 06:00:00', '%Y-%m-%d %H:%M:%S')
-end_date = dt.datetime.strptime('2020-08-06 18:00:00', '%Y-%m-%d %H:%M:%S')
-df = df.loc[start_date : end_date]  # grab rows between these dates
-
 df['AvgPrice'] = (df['High'] + df['Low'] + df['Close']) / 3
-df['vwap'] = (df['AvgPrice'] * df['Volume']).groupby(df.index.date).cumsum() / df['Volume'].groupby(df.index.date).cumsum()  # need to check if this is accurate
+df['vwap'] = (df['AvgPrice'] * df['Volume']).groupby(df.index.date).cumsum() / \
+    df['Volume'].groupby(df.index.date).cumsum()  # need to check if this is accurate
 df['ub'] = vwap_bands(df['vwap'], 0.00300)
 df['lb'] = vwap_bands(df['vwap'], -0.00300)
+
+# start_date = dt.datetime.strptime('2020-08-05 06:00:00', '%Y-%m-%d %H:%M:%S')
+# end_date = dt.datetime.strptime('2020-08-05 18:00:00', '%Y-%m-%d %H:%M:%S')
+# df = df.loc[start_date : end_date]  # grab rows between these dates
 
 df = df.round(5)
 

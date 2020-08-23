@@ -1,4 +1,8 @@
+import os
 import datetime as dt
+import pandas as pd
+import numpy as np
+import mplfinance as mpf
 
 from abc import ABCMeta, abstractmethod
 from queue import Queue
@@ -21,28 +25,28 @@ class GammaBandsPortfolio(PortfolioAbstractClass):
 
     """Portfolio for the gamma bands strategy."""
     
-    def __init__(self, event_queue, data, initial_capital = 1000):
+    def __init__(self, data, event_queue, initial_capital = 1000):
         
         self.event_queue = event_queue
         self.data = data
-        self.initial_capital = initial_capital
         self.all_positions = []  # historical positions
         self.current_position = {}  # active position
-        self.balance = self.initial_capital
+        self.balance = initial_capital
+        self.equity = {'datestamp': [], 'balance': []}
         
     def calculate_profit(self, data):
 
         """Calculates current positions profit."""
-
-        position_direction = 0
 
         if self.current_position['Direction'] == 'BUY':
             position_direction = 1
         else:
             position_direction = -1
 
-        profit_pips = position_direction * (data[0]['Close'] - self.current_position['Open Price']) * 10000
-        profit = profit_pips * (0.0001 / data[0]['Close']) * self.current_position['Quantity']
+        profit_pips = position_direction * (data[0]['Close'] - \
+            self.current_position['Open Price']) * 10000
+        profit = profit_pips * (0.0001 / data[0]['Close']) * \
+            self.current_position['Quantity']
 
         return round(profit, 2)
     
@@ -51,18 +55,22 @@ class GammaBandsPortfolio(PortfolioAbstractClass):
         """Updates current_position and portfolio balance when a MarketEvent occurs."""
         
         data = self.data.get_latest_data()
-        
-        if len(self.current_position) > 0:
-            self.balance -= self.current_position['Profit']
+        datestamp = dt.datetime.strptime(data[0]['Time'], '%d-%m-%Y %H:%M:%S')
+
+        if self.current_position is not None and len(self.current_position) > 0:
             profit = self.calculate_profit(data)
+            self.balance += profit - self.current_position['Profit']
             self.current_position['Profit'] = profit
-            self.balance += self.current_position['Profit']
+        
+        self.equity['datestamp'].append(datestamp)
+        self.equity['balance'].append(self.balance)
     
     def update_position_from_fill(self, event):
         
         """Takes a FillEvent from the broker and adds or removes current_position."""
         
         data = self.data.get_latest_data()
+        datestamp = event.datestamp.strftime('%d-%m-%Y %H:%M:%S')
 
         if event.order_type == 'EXIT':
             position_summary = {
@@ -71,9 +79,8 @@ class GammaBandsPortfolio(PortfolioAbstractClass):
                 'Symbol': self.current_position['Symbol'],
                 'Open Time': self.current_position['Open Time'],
                 'Open Price': self.current_position['Open Price'],
-                'SL': self.current_position['SL'],
-                'Close Time': event.datestamp.strftime('%d-%m-%Y %H:%M:%S'),
-                'Close Price': data[0]['Close'],  # filled on bar close
+                'Close Time': datestamp,
+                'Close Price': data[0]['Close'],
                 'Profit': self.current_position['Profit']
             }
             self.all_positions.append(position_summary)
@@ -82,14 +89,11 @@ class GammaBandsPortfolio(PortfolioAbstractClass):
             self.current_position.clear()
         else:
             # add current_position
-            self.current_position['Open Time'] = event.datestamp.strftime('%d-%m-%Y %H:%M:%S')
+            self.current_position['Open Time'] = datestamp
             self.current_position['Direction'] = event.direction
             self.current_position['Quantity'] = event.quantity
             self.current_position['Symbol'] = event.symbol
-            self.current_position['Open Price'] = data[0]['Close']  # filled on bar close
-            self.current_position['SL'] = (
-                data[0]['Close'] - 0.0020 if event.direction == 'BUY' else data[0]['Close'] + 0.0020
-            )
+            self.current_position['Open Price'] = data[0]['Close']
             self.current_position['Profit'] = 0
         
     def update_fill(self, event):
@@ -121,3 +125,52 @@ class GammaBandsPortfolio(PortfolioAbstractClass):
         if isinstance(event, SignalEvent):
             order = self.generate_order(event)
             self.event_queue.put(order)
+
+    def create_summary(self):
+
+        """Creates a csv file and image showing all positions taken."""
+
+        curr_dir = os.path.dirname(os.path.realpath(__file__))
+        save_dir = os.path.join(curr_dir, 'backtest_summary')
+
+        # csv file
+        summary = pd.DataFrame.from_dict(self.equity)
+        summary = summary.set_index('datestamp')
+        summary['Buy Orders'] = np.nan
+        summary['Sell Orders'] = np.nan
+
+        for trade in self.all_positions:
+            open_time = dt.datetime.strptime(trade['Open Time'], '%d-%m-%Y %H:%M:%S')
+            close_time = dt.datetime.strptime(trade['Close Time'], '%d-%m-%Y %H:%M:%S')
+
+            if trade['Direction'] == 'BUY':
+                summary.loc[open_time, 'Buy Orders'] = trade['Open Price']
+                summary.loc[close_time, 'Sell Orders'] = trade['Close Price']
+            else:
+                summary.loc[open_time, 'Sell Orders'] = trade['Open Price']
+                summary.loc[close_time, 'Buy Orders'] = trade['Close Price']
+
+        summary.to_csv(f'{save_dir}/summary.csv')
+
+        # image
+        data = self.data.symbol_data
+        indicator = data[['vwap', 'ub', 'lb']]
+
+        plots = [
+            mpf.make_addplot(indicator, linestyle='dashdot', color='black'),
+            mpf.make_addplot(
+                summary['Buy Orders'], type='scatter', color='green', 
+                marker='^', markersize=40
+            ),
+            mpf.make_addplot(
+                summary['Sell Orders'], type='scatter', color='red', 
+                marker='v', markersize=40
+            ),
+            mpf.make_addplot(summary['balance'], panel=1, color='fuchsia')
+        ]
+
+        mpf.plot(
+            data, type='candlestick', figratio=(18,10), panel_ratios=(8,2), 
+            addplot=plots, style='sas', savefig=f'{save_dir}/summary.png', 
+            tight_layout=True
+        )

@@ -8,6 +8,7 @@ rope = "*"
 
 [packages]
 pandas = "*"
+mplfinance = "*"
 
 [requires]
 python_version = "3.8"
