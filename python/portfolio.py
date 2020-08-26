@@ -10,7 +10,6 @@ from queue import Queue
 from events import FillEvent, OrderEvent, SignalEvent
 
 class PortfolioAbstractClass(metaclass = ABCMeta):
-
     """Abstract base class that provides an interface for all inherited portfolio objects."""
 
     @abstractmethod
@@ -22,7 +21,6 @@ class PortfolioAbstractClass(metaclass = ABCMeta):
         pass
 
 class GammaBandsPortfolio(PortfolioAbstractClass):
-
     """Portfolio for the gamma bands strategy."""
     
     def __init__(self, data, event_queue, initial_capital = 1000):
@@ -35,7 +33,6 @@ class GammaBandsPortfolio(PortfolioAbstractClass):
         self.equity = {'datestamp': [], 'balance': []}
         
     def calculate_profit(self, data):
-
         """Calculates current positions profit."""
 
         if self.current_position['Direction'] == 'BUY':
@@ -51,7 +48,6 @@ class GammaBandsPortfolio(PortfolioAbstractClass):
         return round(profit, 2)
     
     def update_portfolio(self, event):
-        
         """Updates current_position and portfolio balance when a MarketEvent occurs."""
         
         data = self.data.get_latest_data()
@@ -66,7 +62,6 @@ class GammaBandsPortfolio(PortfolioAbstractClass):
         self.equity['balance'].append(self.balance)
     
     def update_position_from_fill(self, event):
-        
         """Takes a FillEvent from the broker and adds or removes current_position."""
         
         data = self.data.get_latest_data()
@@ -97,14 +92,12 @@ class GammaBandsPortfolio(PortfolioAbstractClass):
             self.current_position['Profit'] = 0
         
     def update_fill(self, event):
-
         """Receives a FillEvent and updates the current_position."""
         
         if isinstance(event, FillEvent):
             self.update_position_from_fill(event)
     
     def generate_order(self, event):
-
         """Receives a SignalEvent from the strategy and generates an OrderEvent."""
                 
         symbol = event.symbol
@@ -119,7 +112,6 @@ class GammaBandsPortfolio(PortfolioAbstractClass):
         return(order)
 
     def update_signal(self, event):
-
         """Receives a SignalEvent and creates an OrderEvent."""
             
         if isinstance(event, SignalEvent):
@@ -127,11 +119,7 @@ class GammaBandsPortfolio(PortfolioAbstractClass):
             self.event_queue.put(order)
 
     def create_summary(self):
-
         """Creates a csv file and image showing all positions taken."""
-
-        curr_dir = os.path.dirname(os.path.realpath(__file__))
-        save_dir = os.path.join(curr_dir, 'backtest_summary')
 
         # csv file
         summary = pd.DataFrame.from_dict(self.equity)
@@ -150,14 +138,14 @@ class GammaBandsPortfolio(PortfolioAbstractClass):
                 summary.loc[open_time, 'Sell Orders'] = trade['Open Price']
                 summary.loc[close_time, 'Buy Orders'] = trade['Close Price']
 
-        summary.to_csv(f'{save_dir}/summary.csv')
+        curr_dir = os.path.dirname(os.path.realpath(__file__))
+        save_path = os.path.join(curr_dir, 'summary')
+        summary.to_csv(f'{save_path}/summary.csv')
 
         # image
         data = self.data.symbol_data
-        indicator = data[['vwap', 'ub', 'lb']]
 
         plots = [
-            mpf.make_addplot(indicator, linestyle='dashdot', color='black'),
             mpf.make_addplot(
                 summary['Buy Orders'], type='scatter', color='green', 
                 marker='^', markersize=40
@@ -171,6 +159,6 @@ class GammaBandsPortfolio(PortfolioAbstractClass):
 
         mpf.plot(
             data, type='candlestick', figratio=(18,10), panel_ratios=(8,2), 
-            addplot=plots, style='sas', savefig=f'{save_dir}/summary.png', 
+            addplot=plots, style='sas', savefig=f'{save_path}/summary.png', 
             tight_layout=True
         )

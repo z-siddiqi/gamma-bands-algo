@@ -6,7 +6,6 @@ from queue import Queue
 from events import FillEvent, OrderEvent
 
 class ExecutionAbstractClass(metaclass = ABCMeta):
-
     """Abstract base class that provides an interface for all inherited execution objects."""
     
     @abstractmethod
@@ -15,14 +14,12 @@ class ExecutionAbstractClass(metaclass = ABCMeta):
 
 
 class SimulatedExecution(ExecutionAbstractClass):
-    
     """Converts all OrderEvents to FillEvents with no latency or slippage."""
     
     def __init__(self, event_queue):
         self.event_queue = event_queue
         
     def execute_order(self, event):
-
         """Receives an OrderEvent and creates a FillEvent."""
         
         if isinstance(event, OrderEvent):
